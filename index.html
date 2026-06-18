@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinic Ad Calculator — Culture of One</title>
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f4f3ee; --ink:#1d1c1a; --muted:#6b6a64; --hint:#9a988f;
+    --line:rgba(0,0,0,.10);
+    --green-bg:#e8f3e6; --green-ink:#2f6b22;
+    --amber-bg:#fbf0d8; --amber-ink:#8a5b08;
+    --red-bg:#f7e6e4; --red-ink:#9a2f24;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:640px;margin:0 auto;padding:32px 20px 48px;}
+  h1{font-size:24px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em;}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 28px;}
+  .fees{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin:0 0 24px;}
+  .fees input{width:66px;text-align:right;}
+  .lever{display:flex;align-items:center;gap:14px;margin:0 0 16px;}
+  .lever label{font-size:14px;color:var(--muted);flex:1;}
+  .lever input[type=range]{flex:1.6;accent-color:#1d1c1a;height:4px;}
+  .lever .val{font-size:15px;font-weight:600;min-width:104px;text-align:right;font-family:var(--mono);}
+  input[type=number]{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);}
+  .summary{font-size:16px;line-height:1.6;margin:24px 0;padding:14px 16px;border-radius:12px;background:var(--surface);}
+  .summary b{font-weight:600;}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:8px 0 0;}
+  .card{border-radius:12px;padding:16px 12px;text-align:center;}
+  .card .v{font-size:12px;font-weight:600;margin:0 0 8px;text-transform:uppercase;letter-spacing:.05em;}
+  .card .net{font-size:26px;font-weight:600;margin:0;font-family:var(--mono);}
+  .card .inc{font-size:13px;margin:6px 0 0;font-family:var(--mono);opacity:.85;}
+  .card .tag{font-size:13px;font-weight:600;margin:8px 0 0;}
+  .foot{margin:32px 0 0;font-size:13px;color:var(--hint);text-align:center;}
+  @media(max-width:480px){.cards{grid-template-columns:1fr;}.lever{flex-wrap:wrap;}.lever .val{min-width:0;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>The clinic ad calculator</h1>
+  <p class="sub">Forget lifetime value. The only question that matters: does the spend pay back inside 30 days? Drag the levers.</p>
+
+  <div class="fees">
+    <span>First visit $</span><input type="number" id="init" value="99" min="0" step="5">
+    <span>· Each follow-up $</span><input type="number" id="fu" value="148" min="0" step="5">
+  </div>
+
+  <div class="lever"><label>Ad spend / day</label><input type="range" id="ad" min="0" max="300" step="5" value="90"><span class="val" id="ad-v"></span></div>
+  <div class="lever"><label>Agency fee / month</label><input type="range" id="agency" min="0" max="4000" step="50" value="1000"><span class="val" id="agency-v"></span></div>
+  <div class="lever"><label>Customer acquisition cost</label><input type="range" id="cac" min="20" max="350" step="1" value="57"><span class="val" id="cac-v"></span></div>
+  <div class="lever"><label>Therapist cost (% of fee)</label><input type="range" id="ther" min="0" max="80" step="5" value="50"><span class="val" id="ther-v"></span></div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="cards">
+    <div class="card" id="c1"><p class="v">1 visit</p><p class="net" id="net1"></p><p class="inc" id="inc1"></p><p class="tag" id="tag1"></p></div>
+    <div class="card" id="c2"><p class="v">2 visits</p><p class="net" id="net2"></p><p class="inc" id="inc2"></p><p class="tag" id="tag2"></p></div>
+    <div class="card" id="c3"><p class="v">3 visits</p><p class="net" id="net3"></p><p class="inc" id="inc3"></p><p class="tag" id="tag3"></p></div>
+  </div>
+
+  <p class="foot">The ad doesn't make you money. The second visit does. — Culture of One</p>
+
+</div>
+
+<script>
+(function(){
+  var aud=new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0});
+  var g=function(id){return document.getElementById(id);};
+  function update(){
+    var adDay=+g('ad').value, agency=+g('agency').value, cac=+g('cac').value;
+    var init=+g('init').value||0, fu=+g('fu').value||0, keep=1-(+g('ther').value)/100;
+    var adMonth=adDay*30, cost=adMonth+agency;
+    var patients=cac>0?Math.round(adMonth/cac):0;
+    var be=(fu>0&&patients>0&&keep>0)?1+(cost/(patients*keep)-init)/fu:0;
+
+    g('ad-v').textContent=aud.format(adDay)+'/day';
+    g('agency-v').textContent=aud.format(agency);
+    g('cac-v').textContent=aud.format(cac);
+    g('ther-v').textContent=(+g('ther').value)+'%';
+
+    g('summary').innerHTML=aud.format(adMonth)+' ads + '+aud.format(agency)+' agency = <b>'+aud.format(cost)+
+      '</b>/mo, buying <b>'+patients+' patients</b>. You keep '+Math.round(keep*100)+'% of fees after the therapist. Break even at <b>'+
+      (be>0?be.toFixed(1):'—')+' visits</b> each.';
+
+    [1,2,3].forEach(function(n){
+      var gross=patients*(init+(n-1)*fu), net=gross*keep-cost;
+      var card=g('c'+n), tag=g('tag'+n);
+      g('net'+n).textContent=(net>=0?'+':'−')+aud.format(Math.abs(Math.round(net)));
+      g('inc'+n).textContent=aud.format(gross)+' billed';
+      var band=cost*0.05, bg, ink, word;
+      if(net<-band){bg='var(--red-bg)';ink='var(--red-ink)';word='Lose money';}
+      else if(net>band){bg='var(--green-bg)';ink='var(--green-ink)';word='Make bank';}
+      else{bg='var(--amber-bg)';ink='var(--amber-ink)';word='Break even';}
+      card.style.background=bg;
+      g('net'+n).style.color=ink; g('inc'+n).style.color=ink; tag.style.color=ink; card.querySelector('.v').style.color=ink;
+      tag.textContent=word;
+    });
+  }
+  ['ad','agency','cac','ther','init','fu'].forEach(function(id){g(id).addEventListener('input',update);});
+  update();
+})();
+</script>
+</body>
+</html>
